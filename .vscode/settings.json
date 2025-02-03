@@ -1,0 +1,5 @@
+{
+  "python.analysis.extraPaths": [
+    "./build/TA-crowdstrike_falcon_discover/lib"
+  ]
+}

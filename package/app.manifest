@@ -1,0 +1,58 @@
+{
+    "schemaVersion": "2.0.0",
+    "info": {
+        "title": "CrowdStrike Falcon Discover Add-on for Splunk",
+        "id": {
+            "group": null,
+            "name": "TA-crowdstrike_falcon_discover",
+            "version": "0.0.0"
+        },
+        "author": [
+            {
+                "name": "Stjubit",
+                "email": "julian.kaufmann@nts.eu",
+                "company": "NTS NETZWERK TELEKOM SERVICE AG"
+            }
+        ],
+        "releaseDate": "2025-01-25",
+        "description": "CrowdStrike Falcon Discover Add-on for Splunk",
+        "classification": {
+            "intendedAudience": "IT Professionals",
+            "categories": [
+                "Security, Fraud & Compliance"
+            ],
+            "developmentStatus": "Production/Stable"
+        },
+        "commonInformationModels": null,
+        "license": {
+            "name": null,
+            "text": "LICENSE.txt",
+            "uri": null
+        },
+        "privacyPolicy": {
+            "name": null,
+            "text": null,
+            "uri": null
+        },
+        "releaseNotes": {
+            "name": "README",
+            "text": "README.txt",
+            "uri": ""
+        }
+    },
+    "dependencies": null,
+    "tasks": null,
+    "inputGroups": null,
+    "incompatibleApps": null,
+    "platformRequirements": null,
+    "supportedDeployments": [
+        "_standalone",
+        "_distributed",
+        "_search_head_clustering"
+    ],
+    "targetWorkloads": [
+        "_search_heads",
+        "_indexers",
+        "_forwarders"
+    ]
+}

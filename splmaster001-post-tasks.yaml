@@ -1,0 +1,6 @@
+---
+- name: Create a symbolic link
+  ansible.builtin.file:
+    src: /tmp/appmount/output/TA-crowdstrike_falcon_discover
+    dest: /opt/splunk/etc/apps/TA-crowdstrike_falcon_discover
+    state: link
