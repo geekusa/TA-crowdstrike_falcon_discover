@@ -79,6 +79,13 @@ class CrowdStrikeHostInput(BaseModInput):
 
         scheme.add_argument(
             smi.Argument(
+                "index_field_metadata",
+                required_on_create=False,
+            )
+        )
+
+        scheme.add_argument(
+            smi.Argument(
                 "verify",
                 required_on_create=True,
             )
@@ -93,7 +100,7 @@ class CrowdStrikeHostInput(BaseModInput):
         return ["cs_account"]
 
     def get_checkbox_fields(self):
-        return ["verify"]
+        return ["index_field_metadata", "verify"]
 
     def validate_input(self, definition: smi.ValidationDefinition):
         return
@@ -118,6 +125,7 @@ class CrowdStrikeHostInput(BaseModInput):
             api_account = self.get_arg("cs_account")
             fql_filter_hosts = self.get_arg("fql_filter_hosts")
             excluded_fields = self.get_arg("excluded_fields")
+            index_field_metadata = self.get_arg("index_field_metadata")
             verify = self.get_arg("verify")
 
             # save account configuration
@@ -138,12 +146,13 @@ class CrowdStrikeHostInput(BaseModInput):
             # set defaults for optional arguments
             fql_filter_hosts = fql_filter_hosts if fql_filter_hosts else ""
             excluded_fields = excluded_fields if excluded_fields else ""
+            index_field_metadata = index_field_metadata if index_field_metadata is not None else False
             verify = verify if verify is not None else True
 
             self.log_info(
                 f"Starting input with configuration: name={normalized_input_name}, cron_schedule={cron_schedule}, "
                 f"account={api_account['name']}, index={index}, fql_filter_hosts={fql_filter_hosts}, "
-                f"excluded_fields={excluded_fields}, verify={verify}"
+                f"excluded_fields={excluded_fields}, index_field_metadata={index_field_metadata}, verify={verify}"
             )
 
             # initialize splunklib client
@@ -303,6 +312,7 @@ class CrowdStrikeHostInput(BaseModInput):
                 index,
                 host_ids_to_query,
                 excluded_fields,
+                index_field_metadata,
             )
 
             if num_total_indexed:
