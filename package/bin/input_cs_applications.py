@@ -263,12 +263,14 @@ class CrowdStrikeApplicationInput(BaseModInput):
                         )
 
                         # run input if next run has been reached or schedule settings have changed
-                        if (
-                            scheduler_expression != cron_schedule
-                            or now > scheduler_next_run
-                        ):
+                        if scheduler_expression != cron_schedule:
                             self.log_info(
-                                "Schedule has been reached or cron expression changed! Starting input ..."
+                                f"Cron expression changed (was={scheduler_expression}, now={cron_schedule}). Starting input ..."
+                            )
+                            schedule_reached = True
+                        elif now > scheduler_next_run:
+                            self.log_info(
+                                f"Schedule has been reached (now={now}, next_run={scheduler_next_run}). Starting input ..."
                             )
                             schedule_reached = True
                         else:
