@@ -361,34 +361,25 @@ class CrowdStrikeApplicationInput(BaseModInput):
                 f"Updating scheduler data: input={normalized_input_name}, schedule={cron_schedule}, next_run={next_run}"
             )
 
-            kv_scheduler: splunklib.client.KVStoreCollection = (
-                splunklib_client.kvstore[SCHEDULER_KEY]
-            )
-            scheduler_data = {
-                "schedule": cron_schedule,
-                "next_run": int(next_run.timestamp()),
-            }
-
-            # check if schedular data for input exists (=update) or not (=insert)
-            scheduler_data_exists = True
             try:
-                kv_scheduler.data.query_by_id(normalized_input_name)
-            except Exception:
-                scheduler_data_exists = False
-
-            try:
-                if scheduler_data_exists:
-                    kv_scheduler.data.update(normalized_input_name, scheduler_data)
-                else:
-                    scheduler_data["_key"] = normalized_input_name
-                    kv_scheduler.data.insert(scheduler_data)
-            except Exception as ex:
-                self.log_info(
-                    f"Unable to update scheduler data in KV Store! Stopping ... Exception: {ex}"
+                kv_scheduler: splunklib.client.KVStoreCollection = (
+                    splunklib_client.kvstore[SCHEDULER_KEY]
                 )
-                sys.exit(1)
-
-            self.log_info("Successfully updated scheduler data!")
+                # batch_save is an atomic upsert — no separate insert/update needed
+                kv_scheduler.data._post(
+                    "batch_save",
+                    headers=splunklib.client.KVStoreCollectionData.JSON_HEADER,
+                    body=json.dumps([{
+                        "_key": normalized_input_name,
+                        "schedule": cron_schedule,
+                        "next_run": int(next_run.timestamp()),
+                    }]),
+                )
+                self.log_info("Successfully updated scheduler data!")
+            except Exception as ex:
+                self.log_error(
+                    f"Unable to update scheduler data in KV Store: {ex}. Input may run again sooner than scheduled."
+                )
 
             log.modular_input_end(self.logger, normalized_input_name)
 
