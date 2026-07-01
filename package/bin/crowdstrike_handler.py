@@ -316,6 +316,7 @@ class CrowdStrikeHandler:
         index,
         host_ids,
         excluded_fields="",
+        include_field_metadata=False,
     ):
         """
         This function fetches full host details for a given list of host IDs from the
@@ -350,6 +351,11 @@ class CrowdStrikeHandler:
             )
 
             for host in resources:
+                # strip field_metadata unless explicitly requested — it is large
+                # and rarely useful for search/analysis
+                if not include_field_metadata:
+                    host.pop("field_metadata", None)
+
                 # remove excluded fields (supports dot notation)
                 for field_to_remove in excluded_fields.split(","):
                     normalized_field = field_to_remove.strip()

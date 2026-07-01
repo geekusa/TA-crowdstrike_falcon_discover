@@ -2,9 +2,9 @@
     "meta": {
         "name": "TA-crowdstrike_falcon_discover",
         "displayName": "CrowdStrike Falcon Discover Add-on for Splunk",
-        "version": "0.0.0+004a135",
+        "version": "0.0.0+c7b9f9e",
         "restRoot": "TA_crowdstrike_falcon_discover",
-        "schemaVersion": "0.0.9"
+        "schemaVersion": "0.0.10"
     },
     "pages": {
         "configuration": {
