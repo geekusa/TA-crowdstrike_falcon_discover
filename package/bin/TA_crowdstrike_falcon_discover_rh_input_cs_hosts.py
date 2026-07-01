@@ -71,6 +71,7 @@ fields = [
             min_len=0,
         ),
     ),
+    field.RestField("index_field_metadata", required=False, encrypted=False, default=False, validator=None),
     field.RestField("verify", required=True, encrypted=False, default=True, validator=None),
     field.RestField("disabled", required=False, validator=None),
 ]
