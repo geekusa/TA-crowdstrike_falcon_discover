@@ -345,49 +345,50 @@ class CrowdStrikeApplicationInput(BaseModInput):
                     num_total_indexed,
                     index,
                 )
-
-                # calculate next run and update scheduler setting
-                iteration = croniter(
-                    expr_format=cron_schedule,
-                    start_time=datetime.datetime.now(tz=datetime.timezone.utc),
-                )
-                next_run = iteration.get_next(datetime.datetime)
-                self.log_info(
-                    f"Updating scheduler data: input={normalized_input_name}, schedule={cron_schedule}, next_run={next_run}"
-                )
-
-                kv_scheduler: splunklib.client.KVStoreCollection = (
-                    splunklib_client.kvstore[SCHEDULER_KEY]
-                )
-                scheduler_data = {
-                    "schedule": cron_schedule,
-                    "next_run": int(next_run.timestamp()),
-                }
-
-                # check if schedular data for input exists (=update) or not (=insert)
-                scheduler_data_exists = True
-                try:
-                    kv_scheduler.data.query_by_id(normalized_input_name)
-                except Exception:
-                    scheduler_data_exists = False
-
-                try:
-                    if scheduler_data_exists:
-                        kv_scheduler.data.update(normalized_input_name, scheduler_data)
-                    else:
-                        scheduler_data["_key"] = normalized_input_name
-                        kv_scheduler.data.insert(scheduler_data)
-                except Exception as ex:
-                    self.log_info(
-                        f"Unable to update scheduler data in KV Store! Stopping ... Exception: {ex}"
-                    )
-                    sys.exit(1)
-
-                self.log_info("Successfully updated scheduler data!")
             else:
                 self.log_error(
-                    "The input was not able to index application data :/ Please check the TA logs for more details why this may have happend. The input will restart automatically."
+                    "The input was not able to index application data :/ Please check the TA logs for more details."
                 )
+
+            # Always update the scheduler after a completed run — even when zero events
+            # were indexed — so the input does not immediately re-fire on the next restart.
+            iteration = croniter(
+                expr_format=cron_schedule,
+                start_time=datetime.datetime.now(tz=datetime.timezone.utc),
+            )
+            next_run = iteration.get_next(datetime.datetime)
+            self.log_info(
+                f"Updating scheduler data: input={normalized_input_name}, schedule={cron_schedule}, next_run={next_run}"
+            )
+
+            kv_scheduler: splunklib.client.KVStoreCollection = (
+                splunklib_client.kvstore[SCHEDULER_KEY]
+            )
+            scheduler_data = {
+                "schedule": cron_schedule,
+                "next_run": int(next_run.timestamp()),
+            }
+
+            # check if schedular data for input exists (=update) or not (=insert)
+            scheduler_data_exists = True
+            try:
+                kv_scheduler.data.query_by_id(normalized_input_name)
+            except Exception:
+                scheduler_data_exists = False
+
+            try:
+                if scheduler_data_exists:
+                    kv_scheduler.data.update(normalized_input_name, scheduler_data)
+                else:
+                    scheduler_data["_key"] = normalized_input_name
+                    kv_scheduler.data.insert(scheduler_data)
+            except Exception as ex:
+                self.log_info(
+                    f"Unable to update scheduler data in KV Store! Stopping ... Exception: {ex}"
+                )
+                sys.exit(1)
+
+            self.log_info("Successfully updated scheduler data!")
 
             log.modular_input_end(self.logger, normalized_input_name)
 
