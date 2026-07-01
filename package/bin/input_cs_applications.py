@@ -251,7 +251,7 @@ class CrowdStrikeApplicationInput(BaseModInput):
                         scheduler_data = None
 
                     if scheduler_data:
-                        now = datetime.datetime.now(tz=datetime.timezone.utc)
+                        now = datetime.datetime.now().astimezone()
                         scheduler_expression = scheduler_data["schedule"]
                         scheduler_next_run = datetime.datetime.fromtimestamp(
                             timestamp=scheduler_data["next_run"],
@@ -354,7 +354,7 @@ class CrowdStrikeApplicationInput(BaseModInput):
             # were indexed — so the input does not immediately re-fire on the next restart.
             iteration = croniter(
                 expr_format=cron_schedule,
-                start_time=datetime.datetime.now(tz=datetime.timezone.utc),
+                start_time=datetime.datetime.now().astimezone(),
             )
             next_run = iteration.get_next(datetime.datetime)
             self.log_info(
