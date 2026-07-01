@@ -264,7 +264,8 @@ class CrowdStrikeHandler:
             )
 
         event_counters = await asyncio.gather(*tasks)
-        num_total_indexed = sum(event_counters)
+        # tasks return None on API/write errors; filter before summing
+        num_total_indexed = sum(c for c in event_counters if c is not None)
 
         return num_total_indexed
 
