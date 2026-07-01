@@ -268,6 +268,137 @@ class CrowdStrikeHandler:
 
         return num_total_indexed
 
+    def fetch_host_ids(self, fql_filter=""):
+        """
+        This function fetches all Discover host IDs matching the given FQL filter
+        and returns a list of host IDs.
+        """
+        host_ids = []
+        offset = 0
+        total = 1
+        limit = 100
+
+        while offset < total:
+            self.helper.log_info(
+                f'Querying Discover hosts: filter="{fql_filter}", offset={offset}, total={total}, '
+                f"progress={round(offset / total * 100, 2)}%"
+            )
+            query_response = self.discover_client.query_hosts(
+                offset=offset, limit=limit, filter=fql_filter
+            )
+
+            if query_response["status_code"] != 200:
+                for error_result in query_response["body"]["errors"]:
+                    self.helper.log_critical(
+                        f"Received API error when querying Discover hosts: {error_result['message']}"
+                    )
+                return None
+
+            query_response_data = query_response["body"]
+            offset = offset + limit
+            total = query_response_data["meta"]["pagination"]["total"]
+
+            resources = query_response_data.get("resources") or []
+            if not resources:
+                self.helper.log_info("No Discover host IDs returned for this page.")
+
+            host_ids.extend(resources)
+
+        host_ids = list(set(host_ids))
+        self.helper.log_info(f"Successfully fetched {len(host_ids)} Discover host ID(s) in total!")
+        return host_ids
+
+    def fetch_hosts_and_index_all(
+        self,
+        event_writer: smi.EventWriter,
+        kv_checkpoint: KVStoreCollection,
+        index,
+        host_ids,
+        excluded_fields="",
+    ):
+        """
+        This function fetches full host details for a given list of host IDs from the
+        CrowdStrike Discover API and indexes them into Splunk.
+        """
+        num_total_indexed = 0
+
+        for lower_boundary in range(0, len(host_ids), 100):
+            upper_boundary = (
+                lower_boundary + 100
+                if lower_boundary + 100 < len(host_ids)
+                else len(host_ids)
+            )
+            host_id_batch = host_ids[lower_boundary:upper_boundary]
+
+            self.helper.log_debug(
+                f"Requesting host details {lower_boundary}-{upper_boundary} of {len(host_ids)} ..."
+            )
+
+            get_hosts_response = self.discover_client.get_hosts(ids=host_id_batch)
+
+            if get_hosts_response["status_code"] != 200:
+                for error_result in get_hosts_response["body"]["errors"]:
+                    self.helper.log_critical(
+                        f"Received API error when fetching Discover host details: {error_result['message']}"
+                    )
+                return None
+
+            resources = get_hosts_response["body"].get("resources") or []
+            self.helper.log_debug(
+                f"Sending {len(resources)} host event(s) to index {index} ..."
+            )
+
+            for host in resources:
+                # remove excluded fields (supports dot notation)
+                for field_to_remove in excluded_fields.split(","):
+                    normalized_field = field_to_remove.strip()
+                    if not normalized_field:
+                        continue
+                    try:
+                        if "." in normalized_field:
+                            key_parts = normalized_field.split(".", 1)
+                            parent_key = key_parts[0].strip()
+                            child_key = key_parts[1].strip()
+                            del host[parent_key][child_key]
+                        else:
+                            del host[normalized_field]
+                    except KeyError as ex:
+                        self.helper.log_debug(
+                            f"Unable to remove excluded field {normalized_field} from host: {ex}"
+                        )
+
+                event = smi.Event(
+                    data=json.dumps(host, ensure_ascii=False),
+                    index=index,
+                    sourcetype="crowdstrike:discover:host",
+                    source="TA-crowdstrike_falcon_discover",
+                    time=time.time(),
+                )
+                try:
+                    event_writer.write_event(event)
+                except Exception as ex:
+                    self.helper.log_critical(
+                        f"Caught exception when sending host event to Splunk: {ex}"
+                    )
+                    return None
+
+                num_total_indexed += 1
+
+            # remove processed host IDs from checkpoint
+            for host_id in host_id_batch:
+                try:
+                    kv_checkpoint.data.delete_by_id(host_id)
+                except Exception as ex:
+                    self.helper.log_critical(
+                        f"Unable to delete host ID {host_id} from checkpoint: {ex}"
+                    )
+
+            self.helper.log_info(
+                f"Successfully indexed and checkpointed batch {lower_boundary}-{upper_boundary}."
+            )
+
+        return num_total_indexed
+
     def fetch_applications_and_index_all(
         self,
         event_writer: smi.EventWriter,

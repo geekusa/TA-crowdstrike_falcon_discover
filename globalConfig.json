@@ -253,18 +253,6 @@
                         "label": "CrowdStrike Account"
                     },
                     {
-                        "field": "fql_filter_devices",
-                        "label": "FQL Filter - Devices"
-                    },
-                    {
-                        "field": "fql_filter_applications",
-                        "label": "FQL Filter - Applications"
-                    },
-                    {
-                        "field": "index_host_info",
-                        "label": "Index Host Information"
-                    },
-                    {
                         "field": "excluded_fields",
                         "label": "Excluded Fields"
                     },
@@ -280,6 +268,131 @@
                 ]
             },
             "services": [
+                {
+                    "name": "input_cs_hosts",
+                    "title": "CrowdStrike Discover Host Input",
+                    "entity": [
+                        {
+                            "field": "name",
+                            "label": "Name",
+                            "type": "text",
+                            "help": "Enter a unique name for the data input",
+                            "required": true,
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "pattern": "^[a-zA-Z]\\w*$",
+                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores."
+                                },
+                                {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 100,
+                                    "errorMsg": "Length of input name should be between 1 and 100"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "interval",
+                            "field": "interval",
+                            "label": "Interval",
+                            "help": "The input is designed to run continuously (interval=0). Do not change this setting!",
+                            "required": true,
+                            "defaultValue": "0"
+                        },
+                        {
+                            "field": "cron_schedule",
+                            "label": "Cron Schedule",
+                            "type": "text",
+                            "defaultValue": "0 0 * * *",
+                            "required": true,
+                            "help": "Cron schedule expression how often data should be collected",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80,
+                                    "errorMsg": "Length of cron schedule expression should be between 1 and 80."
+                                }
+                            ]
+                        },
+                        {
+                            "field": "index",
+                            "label": "Index",
+                            "type": "singleSelect",
+                            "defaultValue": "default",
+                            "options": {
+                                "endpointUrl": "data/indexes",
+                                "createSearchChoice": true,
+                                "denyList": "^_.*$"
+                            },
+                            "required": true,
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80,
+                                    "errorMsg": "Length of index name should be between 1 and 80."
+                                }
+                            ]
+                        },
+                        {
+                            "field": "cs_account",
+                            "label": "CrowdStrike Account",
+                            "help": "Select the account created on the Configuration tab.",
+                            "required": true,
+                            "type": "singleSelect",
+                            "options": {
+                                "referenceName": "account"
+                            }
+                        },
+                        {
+                            "field": "fql_filter_hosts",
+                            "label": "FQL Filter - Hosts",
+                            "help": "(optional) Filter hosts to collect from the Discover API.",
+                            "required": false,
+                            "type": "text",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 0,
+                                    "maxLength": 8192,
+                                    "errorMsg": "Max length of text input is 8192"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "fql_filter_hosts_help",
+                            "label": " ",
+                            "type": "helpLink",
+                            "options": {
+                                "text": "Available host filters",
+                                "link": "https://falconpy.io/Service-Collections/Discover.html#available-filters-2"
+                            }
+                        },
+                        {
+                            "field": "excluded_fields",
+                            "label": "Excluded Fields",
+                            "help": "(optional) Comma-separated list of fields to exclude from indexing. Example: external_ip,os_version",
+                            "required": false,
+                            "type": "text",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 0,
+                                    "maxLength": 8192,
+                                    "errorMsg": "Max length of text input is 8192"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "verify",
+                            "type": "checkbox",
+                            "label": "Verify Certificate?",
+                            "defaultValue": true
+                        }
+                    ]
+                },
                 {
                     "name": "input_cs_applications",
                     "title": "CrowdStrike Discover Application Input",
